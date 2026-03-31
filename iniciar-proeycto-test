@@ -1,0 +1,6 @@
+para inicia el proeycto es el comando : ./mvnw spring-boot:run
+
+para ejecutar el test que te toco de producto enexistente : ./mvnw test -Dtest="CatalogServiceTest#shouldThrowNotFoundWhenProductDoesNotExist"
+
+
+
