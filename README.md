@@ -45,6 +45,28 @@ Implementación de pruebas unitarias en Python usando el patrón AAA (Arrange-Ac
 
 ---
 
+### 3. **microservicios-junit**
+🌐 **Pruebas Automatizadas de Microservicios REST**
+
+Proyecto de pruebas automatizadas para validar microservicios REST usando la API JSONPlaceholder.
+
+- **Tecnologías**: Java 11, JUnit 5, Apache HttpClient 5, Gson, AssertJ
+- **Características**:
+  - Pruebas de endpoints REST (GET, POST)
+  - Validación de respuestas HTTP y JSON
+  - Manejo de errores (404 Not Found)
+  - Validación de estructuras complejas y objetos anidados
+  - Pruebas de colecciones de recursos
+- **Casos de prueba**:
+  - GET: Consultar datos de usuario
+  - POST: Crear nuevo recurso
+  - Manejo de errores: Recurso inexistente
+  - Validar múltiples posts
+- **Ejecutar pruebas**: `mvn test`
+- **Ubicación**: `microservicios-junit/`
+
+---
+
 ## 🚀 Cómo usar este repositorio
 
 1. **Clonar el repositorio**:
@@ -73,6 +95,9 @@ Implementación de pruebas unitarias en Python usando el patrón AAA (Arrange-Ac
 - ✅ Cobertura de código (JaCoCo)
 - ✅ Validación de datos
 - ✅ Manejo de excepciones
+- ✅ Pruebas de microservicios REST
+- ✅ Validación de respuestas HTTP y JSON
+- ✅ Pruebas de integración con APIs externas
 
 ---
 

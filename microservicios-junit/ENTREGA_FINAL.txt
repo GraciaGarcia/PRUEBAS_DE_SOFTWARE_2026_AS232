@@ -1,0 +1,420 @@
+================================================================================
+                    DOCUMENTO DE ENTREGA FINAL
+        Microservicios y Pruebas Unitarias con JUnit
+================================================================================
+
+NOMBRE DEL ESTUDIANTE
+================================================================================
+[AGREGA TU NOMBRE AQUÍ]
+
+
+DESCRIPCIÓN BREVE DEL CASO ANALIZADO
+================================================================================
+
+Se desarrolló un conjunto de pruebas automatizadas para validar el funcionamiento 
+de microservicios REST utilizando la API pública JSONPlaceholder 
+(https://jsonplaceholder.typicode.com).
+
+La empresa de comercio electrónico necesita verificar que sus microservicios 
+respondan correctamente ante diferentes tipos de solicitudes HTTP. Para esto, 
+se utilizó la API JSONPlaceholder que simula un servidor backend con endpoints 
+para gestionar usuarios, posts, comentarios y otros recursos.
+
+El objetivo principal es implementar pruebas automatizadas que validen:
+- Consultas de datos (GET)
+- Creación de recursos (POST)
+- Manejo de errores (404)
+- Respuestas en formato JSON
+
+
+EXPLICACIÓN DE LAS PRUEBAS DISEÑADAS
+================================================================================
+
+Se implementaron 4 pruebas automatizadas que cubren diferentes escenarios:
+
+
+PRUEBA 1: GET - CONSULTAR DATOS DE UN USUARIO
+────────────────────────────────────────────────
+
+Objetivo: Verificar que el microservicio devuelve información válida al 
+consultar un usuario específico.
+
+Endpoint: GET /users/1
+
+Validaciones implementadas:
+1. Código de respuesta HTTP 200 (OK)
+2. Existencia de datos en la respuesta JSON
+3. Validación del ID del usuario (debe ser 1)
+4. Validación del nombre (debe ser "Leanne Graham")
+5. Validación del email (debe ser "Sincere@april.biz")
+6. Existencia de campos anidados (address)
+7. Existencia de campos anidados (company)
+8. Validación de datos dentro de objetos anidados (city = "Gwenborough")
+
+Respuesta esperada:
+{
+  "id": 1,
+  "name": "Leanne Graham",
+  "email": "Sincere@april.biz",
+  "address": {
+    "city": "Gwenborough"
+  },
+  "company": {
+    "name": "Romaguera-Crona"
+  }
+}
+
+
+PRUEBA 2: POST - CREAR UN NUEVO POST
+────────────────────────────────────
+
+Objetivo: Verificar que el microservicio procesa correctamente las solicitudes 
+para crear nuevos recursos.
+
+Endpoint: POST /posts
+
+Datos enviados:
+{
+  "title": "Test Post",
+  "body": "Este es un post de prueba",
+  "userId": 1
+}
+
+Validaciones implementadas:
+1. Código de respuesta HTTP 201 (Created) o 200 (OK)
+2. Existencia de datos en la respuesta
+3. Asignación de ID único al nuevo recurso
+4. Validación que el título coincide con lo enviado
+5. Validación que el contenido coincide con lo enviado
+6. Validación que el userId coincide con lo enviado
+
+Respuesta esperada:
+{
+  "title": "Test Post",
+  "body": "Este es un post de prueba",
+  "userId": 1,
+  "id": 101
+}
+
+
+PRUEBA 3: MANEJO DE ERRORES - RECURSO INEXISTENTE
+──────────────────────────────────────────────────
+
+Objetivo: Verificar que el microservicio maneja correctamente las solicitudes 
+para recursos que no existen.
+
+Endpoint: GET /users/99999 (ID que no existe)
+
+Validaciones implementadas:
+1. Código de respuesta HTTP 404 (Not Found)
+2. Respuesta vacía o estructura apropiada para error
+
+Respuesta esperada:
+{} o vacío
+
+
+PRUEBA 4: VALIDAR ESTRUCTURA DE MÚLTIPLES POSTS
+────────────────────────────────────────────────
+
+Objetivo: Verificar que el microservicio devuelve correctamente colecciones 
+de recursos en formato array JSON.
+
+Endpoint: GET /posts?userId=1
+
+Validaciones implementadas:
+1. Código de respuesta HTTP 200 (OK)
+2. Respuesta en formato array JSON (comienza con "[")
+3. Array no vacío (contiene datos)
+
+Respuesta esperada:
+[
+  {
+    "userId": 1,
+    "id": 1,
+    "title": "sunt aut facere repellat...",
+    "body": "quia et suscipit..."
+  },
+  ...
+]
+
+
+CAPTURAS DEL CÓDIGO IMPLEMENTADO EN JUNIT
+================================================================================
+
+ARCHIVO 1: HttpClientUtil.java
+────────────────────────────────
+
+package com.example;
+
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.io.entity.StringEntity;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+/**
+ * Clase utilitaria para realizar peticiones HTTP a microservicios REST
+ */
+public class HttpClientUtil {
+    // URL base de la API pública JSONPlaceholder
+    private static final String BASE_URL = "https://jsonplaceholder.typicode.com";
+
+    /**
+     * Realiza una petición GET a un endpoint específico
+     */
+    public static HttpResponse get(String endpoint) throws Exception {
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            HttpGet request = new HttpGet(BASE_URL + endpoint);
+            return httpClient.execute(request, response -> {
+                int statusCode = response.getCode();
+                String body = new String(response.getEntity().getContent().readAllBytes());
+                return new HttpResponse(statusCode, body);
+            });
+        }
+    }
+
+    /**
+     * Realiza una petición POST a un endpoint específico con datos JSON
+     */
+    public static HttpResponse post(String endpoint, String jsonBody) throws Exception {
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            HttpPost request = new HttpPost(BASE_URL + endpoint);
+            request.setHeader("Content-Type", "application/json");
+            request.setEntity(new StringEntity(jsonBody));
+            return httpClient.execute(request, response -> {
+                int statusCode = response.getCode();
+                String body = new String(response.getEntity().getContent().readAllBytes());
+                return new HttpResponse(statusCode, body);
+            });
+        }
+    }
+
+    /**
+     * Clase interna para encapsular la respuesta HTTP
+     */
+    public static class HttpResponse {
+        public int statusCode;
+        public String body;
+
+        public HttpResponse(int statusCode, String body) {
+            this.statusCode = statusCode;
+            this.body = body;
+        }
+
+        public JsonObject getJsonObject() {
+            return JsonParser.parseString(body).getAsJsonObject();
+        }
+    }
+}
+
+
+ARCHIVO 2: MicroserviciosTest.java (Pruebas)
+─────────────────────────────────────────────
+
+package com.example;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import com.google.gson.JsonObject;
+import static org.junit.jupiter.api.Assertions.*;
+
+@DisplayName("Pruebas de Microservicios - JSONPlaceholder API")
+public class MicroserviciosTest {
+
+    @Test
+    @DisplayName("Prueba 1: GET - Consultar datos de un usuario")
+    void testGetUserData() throws Exception {
+        String endpoint = "/users/1";
+        HttpClientUtil.HttpResponse response = HttpClientUtil.get(endpoint);
+        
+        assertEquals(200, response.statusCode);
+        JsonObject user = response.getJsonObject();
+        assertNotNull(user);
+        assertEquals(1, user.get("id").getAsInt());
+        assertEquals("Leanne Graham", user.get("name").getAsString());
+        assertEquals("Sincere@april.biz", user.get("email").getAsString());
+        assertTrue(user.has("address"));
+        assertTrue(user.has("company"));
+        JsonObject address = user.getAsJsonObject("address");
+        assertEquals("Gwenborough", address.get("city").getAsString());
+    }
+
+    @Test
+    @DisplayName("Prueba 2: POST - Crear un nuevo post")
+    void testCreatePost() throws Exception {
+        String endpoint = "/posts";
+        String jsonBody = "{\"title\": \"Test Post\", \"body\": \"Este es un post de prueba\", \"userId\": 1}";
+        
+        HttpClientUtil.HttpResponse response = HttpClientUtil.post(endpoint, jsonBody);
+        
+        assertTrue(response.statusCode == 200 || response.statusCode == 201);
+        JsonObject post = response.getJsonObject();
+        assertNotNull(post);
+        assertTrue(post.has("id"));
+        assertEquals("Test Post", post.get("title").getAsString());
+        assertEquals("Este es un post de prueba", post.get("body").getAsString());
+        assertEquals(1, post.get("userId").getAsInt());
+    }
+
+    @Test
+    @DisplayName("Prueba 3: Manejo de errores - Recurso inexistente")
+    void testErrorHandlingNotFound() throws Exception {
+        String endpoint = "/users/99999";
+        HttpClientUtil.HttpResponse response = HttpClientUtil.get(endpoint);
+        
+        assertEquals(404, response.statusCode);
+        String body = response.body.trim();
+        assertTrue(body.isEmpty() || body.equals("{}"));
+    }
+
+    @Test
+    @DisplayName("Prueba adicional: Validar estructura de múltiples posts")
+    void testGetMultiplePosts() throws Exception {
+        String endpoint = "/posts?userId=1";
+        HttpClientUtil.HttpResponse response = HttpClientUtil.get(endpoint);
+        
+        assertEquals(200, response.statusCode);
+        assertTrue(response.body.startsWith("["));
+        assertFalse(response.body.equals("[]"));
+    }
+}
+
+
+CAPTURAS DE LA EJECUCIÓN DE LAS PRUEBAS
+================================================================================
+
+COMANDO EJECUTADO:
+────────────────
+mvn clean test
+
+
+SALIDA DE LA EJECUCIÓN:
+──────────────────────
+
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------< com.example:microservicios-junit >------------------
+[INFO] Building microservicios-junit 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ microservicios-junit ---
+[INFO] Deleting C:\Users\graci\OneDrive\Escritorio\PRUEBAS UNITARIAS\RETO -JUnit\microservicios-junit\target
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ microservicios-junit ---
+[INFO] Compiling 1 source file with javac [debug target 15] to target\classes
+[INFO]
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ microservicios-junit ---
+[INFO] Compiling 1 source file with javac [debug target 15] to target\test-classes
+[INFO]
+[INFO] --- surefire:2.22.2:test (default-test) @ microservicios-junit ---
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.example.MicroserviciosTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.836 s
+[INFO] 
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  7.031 s
+[INFO] Finished at: 2026-03-15T03:56:56-05:00
+[INFO] ------------------------------------------------------------------------
+
+
+RESUMEN DE RESULTADOS:
+──────────────────────
+
+✓ Prueba 1: GET - Consultar usuario ...................... PASADA
+✓ Prueba 2: POST - Crear post ............................ PASADA
+✓ Prueba 3: Manejo de errores ............................ PASADA
+✓ Prueba 4: Múltiples posts .............................. PASADA
+
+Total de pruebas: 4
+Pruebas pasadas: 4
+Pruebas fallidas: 0
+Pruebas con error: 0
+Tiempo total: 2.836 segundos
+
+ESTADO FINAL: BUILD SUCCESS ✓
+
+
+REFLEXIÓN FINAL
+================================================================================
+
+¿Por qué es importante realizar pruebas automatizadas en sistemas basados 
+en microservicios?
+
+Las pruebas automatizadas son críticas en arquitecturas de microservicios por 
+las siguientes razones:
+
+1. INDEPENDENCIA DE SERVICIOS
+   Cada microservicio puede ser probado de forma aislada, garantizando que 
+   funciona correctamente antes de integrarlo con otros servicios. Esto permite 
+   identificar problemas específicos de cada servicio sin depender de otros.
+
+2. DETECCIÓN TEMPRANA DE ERRORES
+   Las pruebas automatizadas identifican problemas en etapas tempranas del 
+   desarrollo, reduciendo significativamente los costos de corrección. Un error 
+   detectado en desarrollo es mucho más barato de arreglar que uno en producción.
+
+3. CONFIABILIDAD EN DESPLIEGUES
+   Con pruebas automatizadas, se puede desplegar código con mayor confianza, 
+   sabiendo que los casos críticos están cubiertos. Esto reduce el riesgo de 
+   fallos en producción.
+
+4. DOCUMENTACIÓN VIVA
+   Las pruebas sirven como documentación del comportamiento esperado de cada 
+   endpoint, facilitando el entendimiento del sistema. Los nuevos desarrolladores 
+   pueden entender cómo funciona cada servicio leyendo las pruebas.
+
+5. PREVENCIÓN DE REGRESIONES
+   Al ejecutar pruebas regularmente, se evita que cambios futuros rompan 
+   funcionalidades existentes. Esto es especialmente importante en sistemas 
+   complejos con múltiples servicios interdependientes.
+
+6. ESCALABILIDAD
+   En arquitecturas de microservicios con múltiples servicios, las pruebas 
+   automatizadas son esenciales para mantener la calidad a medida que el 
+   sistema crece. Sin pruebas, es imposible garantizar que todos los servicios 
+   funcionan correctamente juntos.
+
+7. INTEGRACIÓN CONTINUA
+   Las pruebas automatizadas permiten implementar pipelines de CI/CD efectivos, 
+   automatizando el proceso de validación y despliegue. Esto acelera el ciclo 
+   de desarrollo y reduce errores humanos.
+
+8. COMUNICACIÓN ENTRE EQUIPOS
+   Las pruebas claras facilitan la comunicación entre equipos de desarrollo, 
+   QA y operaciones. Todos entienden qué se espera de cada servicio.
+
+CONCLUSIÓN:
+Las pruebas automatizadas no son un lujo sino una necesidad en el desarrollo 
+moderno de microservicios. Proporcionan la confianza necesaria para iterar 
+rápidamente, mantener la calidad y escalar sistemas complejos. Sin pruebas 
+automatizadas, es prácticamente imposible mantener la calidad en un sistema 
+de microservicios en constante evolución.
+
+
+================================================================================
+                            FIN DEL DOCUMENTO
+================================================================================
+
+INSTRUCCIONES PARA ENTREGAR:
+
+1. Copia TODO el contenido de este documento
+2. Abre Google Docs o Word
+3. Pega el contenido
+4. Reemplaza "[AGREGA TU NOMBRE AQUÍ]" con tu nombre
+5. Formatea según los requisitos de tu institución
+6. Agrega capturas de pantalla del código y ejecución si es necesario
+7. Exporta como PDF o comparte el Google Docs
+8. Entrega según los requisitos
+
+================================================================================
